@@ -100,6 +100,29 @@ function route(edge, byId, nodes) {
   const yValues = [...ys].sort((a, b) => a - b);
   const width = xValues.length;
   const height = yValues.length;
+  const horizontalBlocked = new Uint8Array((width - 1) * height);
+  const verticalBlocked = new Uint8Array(width * (height - 1));
+  function blockedSegment(x, y, nextX, nextY) {
+    const horizontal = y === nextY;
+    const cache = horizontal ? horizontalBlocked : verticalBlocked;
+    const key = horizontal ? y * (width - 1) + Math.min(x, nextX) : Math.min(y, nextY) * width + x;
+    if (cache[key]) return cache[key] === 1;
+    const ax = xValues[x];
+    const ay = yValues[y];
+    const bx = xValues[nextX];
+    const by = yValues[nextY];
+    const blocked = nodes.some(node => {
+      const left = node.x - 5;
+      const right = node.x + node.width + 5;
+      const top = node.y - 5;
+      const bottom = node.y + node.height + 5;
+      return horizontal
+        ? ay > top && ay < bottom && Math.max(ax, bx) > left && Math.min(ax, bx) < right
+        : ax > left && ax < right && Math.max(ay, by) > top && Math.min(ay, by) < bottom;
+    });
+    cache[key] = blocked ? 1 : 2;
+    return blocked;
+  }
   const index = (x, y) => y * width + x;
   const sourceIndex = index(xValues.indexOf(source.x), yValues.indexOf(source.y));
   const targetIndex = index(xValues.indexOf(target.x), yValues.indexOf(target.y));
@@ -147,15 +170,13 @@ function route(edge, byId, nodes) {
     if (cell === targetIndex) { finish = state; break; }
     for (const [nextX, nextY, nextDirection] of [[x - 1, y, 1], [x + 1, y, 1], [x, y - 1, 2], [x, y + 1, 2]]) {
       if (nextX < 0 || nextY < 0 || nextX >= width || nextY >= height) continue;
-      const a = { x: xValues[x], y: yValues[y] };
-      const b = { x: xValues[nextX], y: yValues[nextY] };
-      if (nodes.some(node => crosses(a, b, node))) continue;
+      if (blockedSegment(x, y, nextX, nextY)) continue;
       const nextState = index(nextX, nextY) * 3 + nextDirection;
-      const cost = scores[state] + Math.abs(a.x - b.x) + Math.abs(a.y - b.y) + (direction && direction !== nextDirection ? 14 : 0);
+      const cost = scores[state] + Math.abs(xValues[x] - xValues[nextX]) + Math.abs(yValues[y] - yValues[nextY]) + (direction && direction !== nextDirection ? 14 : 0);
       if (cost >= scores[nextState]) continue;
       scores[nextState] = cost;
       previous[nextState] = state;
-      push({ state: nextState, priority: cost + Math.abs(b.x - target.x) + Math.abs(b.y - target.y) });
+      push({ state: nextState, priority: cost + Math.abs(xValues[nextX] - target.x) + Math.abs(yValues[nextY] - target.y) });
     }
   }
   if (finish < 0) return clean([start, source, { x: target.x, y: source.y }, target, end]);

@@ -100,11 +100,15 @@ let layout = null;
 let layoutSerial = 0;
 let layoutTimer = null;
 let dragState = null;
+let dragFrameScheduled = false;
+let dragFrameGeneration = 0;
 let suppressNodeClick = null;
 let camera = null;
 let panState = null;
 let spacePan = false;
 let suppressCanvasClick = false;
+let nodeElements = new Map();
+let edgeElements = new Map();
 
 function persist() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(documentState));
@@ -240,6 +244,19 @@ function beginManualLayout() {
   documentState.preset = false;
 }
 
+function renderDraggedNode() {
+  dragFrameScheduled = false;
+  if (!dragState?.active) return;
+  const dx = dragState.latestClientX - dragState.clientX;
+  const dy = dragState.latestClientY - dragState.clientY;
+  const node = documentState.nodes.find(item => item.id === dragState.id);
+  if (!node) return;
+  node.x = dragState.x + dx / dragState.scale;
+  node.y = dragState.y + dy / dragState.scale;
+  layout = layoutPositioned(documentState);
+  render();
+}
+
 function moveDraggedNode(event) {
   if (!dragState || (event.pointerId != null && event.pointerId !== dragState.pointerId)) return;
   const dx = event.clientX - dragState.clientX;
@@ -252,22 +269,28 @@ function moveDraggedNode(event) {
     beginManualLayout();
     setSelection({ type: 'node', id: dragState.id });
   }
-  const node = documentState.nodes.find(item => item.id === dragState.id);
-  if (!node) return;
-  node.x = dragState.x + dx / dragState.scale;
-  node.y = dragState.y + dy / dragState.scale;
-  layout = layoutPositioned(documentState);
-  render();
+  dragState.latestClientX = event.clientX;
+  dragState.latestClientY = event.clientY;
+  if (!dragFrameScheduled) {
+    dragFrameScheduled = true;
+    const generation = dragFrameGeneration;
+    requestAnimationFrame(() => {
+      if (generation === dragFrameGeneration) renderDraggedNode();
+    });
+  }
   event.preventDefault();
 }
 
 function finishDrag(event) {
   if (!dragState || (event.pointerId != null && event.pointerId !== dragState.pointerId)) return;
   if (dragState.active) {
+    renderDraggedNode();
     suppressNodeClick = dragState.id;
     requestAnimationFrame(() => { suppressNodeClick = null; });
     persist();
   }
+  dragFrameGeneration++;
+  dragFrameScheduled = false;
   dragState = null;
 }
 
@@ -335,15 +358,22 @@ function positionInlineEditor() {
 }
 
 function stopInlineEdit() {
+  if (!editingNodeId) return;
+  nodeElements.get(editingNodeId)?.classList.remove('editing');
   editingNodeId = null;
   inlineEditor.hidden = true;
+  svg.classList.remove('editing');
+  nodesLayer.querySelectorAll('.port[tabindex="-1"]').forEach(port => port.setAttribute('tabindex', '0'));
 }
 
 function startInlineEdit(node) {
   editingNodeId = node.id;
   inlineEditor.value = node.label;
   inlineEditor.hidden = false;
-  render();
+  svg.classList.add('editing');
+  nodeElements.get(node.id)?.classList.add('editing');
+  nodesLayer.querySelectorAll('.port').forEach(port => port.setAttribute('tabindex', '-1'));
+  positionInlineEditor();
   requestAnimationFrame(() => {
     if (editingNodeId !== node.id) return;
     positionInlineEditor();
@@ -354,6 +384,8 @@ function startInlineEdit(node) {
 
 function render() {
   svg.classList.toggle('editing', !!editingNodeId);
+  nodeElements = new Map();
+  edgeElements = new Map();
   shapeMasks.replaceChildren();
   shadowsLayer.replaceChildren();
   backingsLayer.replaceChildren();
@@ -379,6 +411,7 @@ function render() {
     hit.addEventListener('click', event => { event.stopPropagation(); selectEdge(edge.id); });
     group.append(hit);
     edgesLayer.append(group);
+    edgeElements.set(edge.id, group);
   }
 
   layout.children.forEach((placed, index) => {
@@ -502,6 +535,7 @@ function render() {
       group.append(port);
     }
     nodesLayer.append(group);
+    nodeElements.set(node.id, group);
   });
   positionInlineEditor();
 }
@@ -532,8 +566,11 @@ function scheduleLayout() {
 
 function setSelection(selection, focusText = false) {
   stopInlineEdit();
+  if (selected?.type === 'node') nodeElements.get(selected.id)?.classList.remove('selected');
+  if (selected?.type === 'edge') edgeElements.get(selected.id)?.classList.remove('selected');
   selected = selection;
-  render();
+  if (selected?.type === 'node') nodeElements.get(selected.id)?.classList.add('selected');
+  if (selected?.type === 'edge') edgeElements.get(selected.id)?.classList.add('selected');
   const node = selection?.type === 'node' ? documentState.nodes.find(item => item.id === selection.id) : null;
   const edge = selection?.type === 'edge' ? documentState.edges.find(item => item.id === selection.id) : null;
   $('inspector-empty').hidden = !!selection;
@@ -746,7 +783,7 @@ document.querySelectorAll('[data-border-style]').forEach(button => button.addEve
     node.baseWidth = Math.max(node.baseWidth || 0, node.width);
     node.baseHeight = Math.max(node.baseHeight || 0, node.height);
     persist();
-  }
+  } else render();
   setSelection(selected);
 }));
 inlineEditor.addEventListener('input', event => {
@@ -765,7 +802,6 @@ inlineEditor.addEventListener('input', event => {
 inlineEditor.addEventListener('blur', () => {
   if (!editingNodeId) return;
   stopInlineEdit();
-  render();
 });
 $('node-shadow-toggle').addEventListener('change', event => {
   const node = documentState.nodes.find(item => selected?.type === 'node' && item.id === selected.id);

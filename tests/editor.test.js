@@ -59,10 +59,13 @@ test('node editing, directional linking, and SVG export keep the receipt splitte
     assert.notEqual($('diagram').getAttribute('viewBox'), fittedView);
     $('zoom-fit').click();
 
-    window.document.querySelector('[data-node-id="n3"]').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    const selectedElement = window.document.querySelector('[data-node-id="n3"]');
+    selectedElement.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    assert.equal(window.document.querySelector('[data-node-id="n3"]'), selectedElement);
     assert.equal($('inline-editor').hidden, true);
     assert.equal($('inspector-content').hidden, false);
     window.document.querySelector('[data-node-id="n3"]').dispatchEvent(new window.MouseEvent('dblclick', { bubbles: true }));
+    assert.equal(window.document.querySelector('[data-node-id="n3"]'), selectedElement);
     assert.equal($('inline-editor').hidden, false);
     assert.equal($('diagram').classList.contains('editing'), true);
     assert.equal(window.document.querySelector('[data-port-id="n1-east"]').getAttribute('tabindex'), '-1');
@@ -208,7 +211,9 @@ test('node editing, directional linking, and SVG export keep the receipt splitte
     const originalRoute = window.document.querySelector('[data-edge-id="e1"] .edge-line').getAttribute('d');
     window.document.querySelector('[data-node-id="n1"]').dispatchEvent(new window.MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 90, clientY: 270 }));
     window.dispatchEvent(new window.MouseEvent('pointermove', { bubbles: true, clientX: 90, clientY: 230 }));
-    window.dispatchEvent(new window.MouseEvent('pointerup', { bubbles: true, clientX: 90, clientY: 230 }));
+    window.dispatchEvent(new window.MouseEvent('pointermove', { bubbles: true, clientX: 90, clientY: 225 }));
+    assert.equal(window.document.querySelector('[data-node-id="n1"] .node-shape').getAttribute('y'), String(originalY));
+    window.dispatchEvent(new window.MouseEvent('pointerup', { bubbles: true, clientX: 90, clientY: 225 }));
     const moved = window.document.querySelector('[data-node-id="n1"] .node-shape');
     assert.ok(Number(moved.getAttribute('y')) < originalY);
     assert.equal($('inline-editor').hidden, true);
