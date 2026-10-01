@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { JSDOM } from 'jsdom';
+import { sampleTemplate } from '../sample-template.js';
 
 test('a customized old sample remains editable when the starter sample changes', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
@@ -48,8 +49,58 @@ test('an untouched old sample opens the new receipt splitter sample', async () =
     await import('../app.js?untouched-legacy-migration');
     const restored = JSON.parse(localStorage.getItem('schematic-editor-v2'));
     assert.equal(restored.sampleId, 'receipt-splitter-v1');
-    assert.equal(restored.nodes.length, 8);
+    assert.equal(restored.nodes.length, 7);
     assert.equal(restored.nodes[0].label, 'MOBILE APP');
+  } finally {
+    dom.window.close();
+  }
+});
+
+test('an edited title from the previous sample remains in a saved diagram', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const dom = new JSDOM(html, { url: 'http://localhost/' });
+  globalThis.window = dom.window;
+  globalThis.document = dom.window.document;
+  globalThis.localStorage = dom.window.localStorage;
+  globalThis.requestAnimationFrame = callback => setTimeout(callback, 0);
+  document.getElementById('canvas-viewport').getBoundingClientRect = () => ({ left: 0, top: 0, width: 800, height: 800 });
+  const saved = sampleTemplate();
+  saved.nodes.push({
+    id: 'n8', label: 'MY CUSTOM TITLE', baseLabel: 'RECEIPT SPLITTER', shape: 'text',
+    x: 130, y: 40, width: 340, height: 40, border: 1, shadow: false, fontSize: 20, fontWeight: 700,
+  });
+  localStorage.setItem('schematic-editor-v2', JSON.stringify(saved));
+  try {
+    await import('../app.js?edited-title-migration');
+    const restored = JSON.parse(localStorage.getItem('schematic-editor-v2'));
+    assert.equal(restored.preset, false);
+    assert.equal(restored.nodes.length, 8);
+    assert.equal(restored.nodes.find(node => node.id === 'n8').label, 'MY CUSTOM TITLE');
+  } finally {
+    dom.window.close();
+  }
+});
+
+test('an unchanged title from the previous sample is removed on reload', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const dom = new JSDOM(html, { url: 'http://localhost/' });
+  globalThis.window = dom.window;
+  globalThis.document = dom.window.document;
+  globalThis.localStorage = dom.window.localStorage;
+  globalThis.requestAnimationFrame = callback => setTimeout(callback, 0);
+  document.getElementById('canvas-viewport').getBoundingClientRect = () => ({ left: 0, top: 0, width: 800, height: 800 });
+  const saved = sampleTemplate();
+  saved.nodes.push({
+    id: 'n8', label: 'RECEIPT SPLITTER', baseLabel: 'RECEIPT SPLITTER', shape: 'text',
+    x: 130, y: 40, width: 340, height: 40, border: 1, shadow: false, fontSize: 20, fontWeight: 700,
+  });
+  localStorage.setItem('schematic-editor-v2', JSON.stringify(saved));
+  try {
+    await import('../app.js?unchanged-title-migration');
+    const restored = JSON.parse(localStorage.getItem('schematic-editor-v2'));
+    assert.equal(restored.preset, true);
+    assert.equal(restored.nodes.length, 7);
+    assert.equal(restored.nodes.some(node => node.id === 'n8'), false);
   } finally {
     dom.window.close();
   }

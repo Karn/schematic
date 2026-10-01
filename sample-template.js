@@ -7,7 +7,6 @@ const blocks = [
   ['n5', 'SPLIT\nENGINE', 'box', 425, 330, 135, 58, true],
   ['n6', 'RECEIPTS', 'database', 425, 220, 135, 66, false],
   ['n7', 'SPLITS', 'database', 425, 430, 135, 66, false],
-  ['n8', 'RECEIPT SPLITTER', 'text', 130, 40, 340, 40, false],
 ];
 
 const lines = [
@@ -27,8 +26,7 @@ export function sampleTemplate() {
     sampleId: 'receipt-splitter-v1',
     preset: true,
     nodes: blocks.map(([id, label, shape, x, y, width, height, shadow]) => ({
-      id, label, baseLabel: label, shape, x, y, width, height, border: 1, shadow, fontSize: id === 'n8' ? 20 : 15,
-      fontWeight: id === 'n8' ? 700 : 500,
+      id, label, baseLabel: label, shape, x, y, width, height, border: 1, shadow, fontSize: 15, fontWeight: 500,
     })),
     edges: lines.map(([id, from, fromSide, to, toSide, points]) => ({
       id, from, fromSide, to, toSide, points, arrowhead: 'filled',

@@ -27,12 +27,13 @@ test('node editing, directional linking, and SVG export keep the receipt splitte
       await new Promise(resolve => setTimeout(resolve, 20));
     }
     assert.equal($('layout-status').textContent, 'Auto layout on');
-    assert.equal(window.document.querySelectorAll('#nodes-layer .node').length, 8);
+    assert.equal(window.document.querySelectorAll('#nodes-layer .node').length, 7);
     assert.equal(window.document.querySelectorAll('.palette-item').length, 0);
     assert.equal(window.document.querySelectorAll('#edges-layer .edge').length, 8);
     assert.equal(window.document.querySelectorAll('#edge-knockouts-layer .edge-knockout').length, 8);
-    assert.equal(window.document.querySelectorAll('#backings-layer .node-backing').length, 8);
-    assert.equal(window.document.querySelectorAll('#nodes-layer .node-hover-outline').length, 8);
+    assert.equal(window.document.querySelectorAll('#backings-layer .node-backing').length, 7);
+    assert.equal(window.document.querySelectorAll('#nodes-layer .node-hover-outline').length, 7);
+    assert.equal(window.document.querySelector('[data-node-id="n8"]'), null);
     assert.equal(window.document.querySelector('.node-label').textContent, 'MOBILE APP');
     assert.equal(window.document.querySelectorAll('#backings-layer .node-backing[mask]').length, 2);
     assert.equal(window.document.querySelectorAll('#shadows-layer .node-shadow[mask]').length, 0);
@@ -200,7 +201,7 @@ test('node editing, directional linking, and SVG export keep the receipt splitte
     window.confirm = () => true;
     $('load-sample').click();
     await new Promise(resolve => setTimeout(resolve, 30));
-    assert.equal(window.document.querySelectorAll('#nodes-layer .node').length, 8);
+    assert.equal(window.document.querySelectorAll('#nodes-layer .node').length, 7);
     assert.equal(JSON.parse(localStorage.getItem('schematic-editor-v2')).preset, true);
     const beforeDrag = window.document.querySelector('[data-node-id="n1"] .node-shape');
     const originalY = Number(beforeDrag.getAttribute('y'));

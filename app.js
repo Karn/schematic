@@ -39,8 +39,14 @@ function loadDocument() {
     if (saved && Array.isArray(saved.nodes) && Array.isArray(saved.edges)) {
       if (saved.preset) {
         const template = sampleTemplate();
+        const editedRemovedTitle = saved.sampleId === template.sampleId && saved.nodes.some(node =>
+          node.id === 'n8' && (node.label !== 'RECEIPT SPLITTER' || node.shape !== 'text' ||
+            Boolean(node.shadow) || node.border !== 1));
         if (saved.sampleId !== template.sampleId) {
           if (isUntouchedLegacySample(saved)) return template;
+          saved.preset = false;
+          saved.positioned = true;
+        } else if (editedRemovedTitle) {
           saved.preset = false;
           saved.positioned = true;
         } else {
