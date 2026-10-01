@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { displayLines } from '../layout.js';
+import { displayLines, minimumTextNodeSize } from '../layout.js';
 import { sampleLayout, sampleTemplate } from '../sample-template.js';
 import { layoutPositioned } from '../positioned-layout.js';
 
@@ -67,6 +67,10 @@ test('receipt splitter sample routes avoid unrelated blocks', () => {
   assert.equal(result.width, 600);
   assert.equal(result.height, 600);
   assert.deepEqual(document.nodes.filter(node => node.shape === 'database').map(node => node.label), ['RECEIPTS', 'SPLITS']);
+  for (const node of document.nodes) {
+    const minimum = minimumTextNodeSize(node);
+    assert.ok(node.width >= minimum.width && node.height >= minimum.height, `${node.id} keeps text clear of its shape`);
+  }
   for (const edge of result.edges) {
     const original = document.edges.find(item => item.id === edge.id);
     for (const section of edge.sections) {

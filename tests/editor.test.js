@@ -242,7 +242,18 @@ test('node editing, directional linking, and SVG export keep the receipt splitte
     window.document.querySelector('[data-border-style="double"]').click();
     added = JSON.parse(localStorage.getItem('schematic-editor-v2')).nodes[0];
     assert.equal(added.shape, 'double');
+    assert.ok(added.height > 40);
     assert.equal(window.document.querySelector('[data-node-id] .node-inner-border').getAttribute('stroke'), '#000');
+    window.document.querySelector('[data-border-style="box"]').click();
+    let restyled = JSON.parse(localStorage.getItem('schematic-editor-v2')).nodes[0];
+    assert.deepEqual([restyled.width, restyled.height], [added.width, added.height]);
+    window.document.querySelector('[data-border-style="database"]').click();
+    restyled = JSON.parse(localStorage.getItem('schematic-editor-v2')).nodes[0];
+    assert.ok(restyled.height > added.height);
+    const databaseText = window.document.querySelector('[data-node-id] .node-label');
+    const databaseTop = window.document.querySelector('[data-node-id] .node-database-top');
+    assert.ok(Number(databaseText.getAttribute('y')) - 19 * 0.75 -
+      (Number(databaseTop.getAttribute('cy')) + Number(databaseTop.getAttribute('ry'))) >= 8);
     window.document.querySelector('[data-node-id]').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
     assert.equal($('inline-editor').hidden, true);
   } finally {

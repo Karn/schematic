@@ -1,4 +1,4 @@
-import { displayLines } from './layout.js';
+import { minimumTextNodeSize } from './layout.js';
 
 const SIDES = {
   north: [0, -1], east: [1, 0], south: [0, 1], west: [-1, 0],
@@ -19,16 +19,13 @@ function overlaps(a, b, gap = 16) {
 }
 
 function fitNode(node, others) {
-  const lines = displayLines(node.label);
-  const font = node.fontSize || 19;
   const existing = Number.isFinite(node.width) && Number.isFinite(node.height);
   node.baseWidth ??= existing ? node.width : 120;
   node.baseHeight ??= existing ? node.height : 66;
   node.baseLabel ??= node.label;
-  const padding = existing ? 12 : 16;
-  const originalLabel = node.label === node.baseLabel;
-  const width = originalLabel ? node.baseWidth : Math.max(node.baseWidth, Math.ceil(Math.max(...lines.map(line => line.length)) * (font * 0.61 + 0.7) + Math.max(padding, 16)));
-  const height = originalLabel ? node.baseHeight : Math.max(node.baseHeight, Math.ceil(lines.length * font * 1.2 + padding));
+  const minimum = minimumTextNodeSize(node);
+  const width = Math.max(node.baseWidth, minimum.width);
+  const height = Math.max(node.baseHeight, minimum.height);
   if (width === node.width && height === node.height) return;
   const x = node.x + ((node.width || width) - width) / 2;
   const y = node.y + ((node.height || height) - height) / 2;

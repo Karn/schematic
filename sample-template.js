@@ -1,6 +1,6 @@
 // Editable 600 × 600 example of a small receipt splitting service.
 const blocks = [
-  ['n1', 'MOBILE APP', 'box', 40, 160, 125, 58, false],
+  ['n1', 'MOBILE APP', 'box', 40, 160, 128, 58, false],
   ['n2', 'WEB APP', 'box', 40, 300, 125, 58, false],
   ['n3', 'API SERVER', 'double', 235, 230, 130, 64, true],
   ['n4', 'RECEIPT\nPARSER', 'box', 425, 120, 135, 58, true],
@@ -11,7 +11,7 @@ const blocks = [
 ];
 
 const lines = [
-  ['e1', 'n1', 'east', 'n3', 'north', [[165, 189], [300, 189], [300, 230]]],
+  ['e1', 'n1', 'east', 'n3', 'north', [[168, 189], [300, 189], [300, 230]]],
   ['e2', 'n2', 'east', 'n3', 'west', [[165, 329], [200, 329], [200, 262], [235, 262]]],
   ['e3', 'n3', 'east', 'n4', 'west', [[365, 262], [390, 262], [390, 149], [425, 149]]],
   ['e4', 'n4', 'south', 'n6', 'north', [[492.5, 178], [492.5, 220]]],

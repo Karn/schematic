@@ -1,4 +1,4 @@
-import { displayLines, portId, SIDES } from './layout.js';
+import { databaseRadius, displayLines, minimumTextNodeSize, portId, SIDES, textInsets, TEXT_LETTER_SPACING } from './layout.js';
 import { sampleLayout, sampleTemplate } from './sample-template.js';
 import { layoutPositioned } from './positioned-layout.js';
 
@@ -29,10 +29,8 @@ function isUntouchedLegacySample(saved) {
 
 function fitsPresetNode(node, label) {
   if (!Number.isFinite(node.width) || !Number.isFinite(node.height)) return false;
-  const lines = displayLines(label);
-  const fontSize = node.fontSize || 15;
-  return lines.length * fontSize * 1.2 <= node.height - 8 &&
-    Math.max(...lines.map(line => line.length)) * fontSize * 0.61 <= node.width - 8;
+  const minimum = minimumTextNodeSize(node, label);
+  return minimum.width <= node.width && minimum.height <= node.height;
 }
 
 function loadDocument() {
@@ -120,10 +118,6 @@ function endpoint(node, side) {
   if (side === 'south') return { x, y: node.y + node.height };
   if (side === 'east') return { x: node.x + node.width, y };
   return { x: node.x, y };
-}
-
-function databaseRadius(height) {
-  return Math.min(10, height / 5);
 }
 
 function databaseBodyPath(x, y, width, height) {
@@ -318,13 +312,14 @@ function positionInlineEditor() {
   const scale = Math.min(width / boxWidth, height / boxHeight);
   const insetX = (width - boxWidth * scale) / 2;
   const insetY = (height - boxHeight * scale) / 2;
-  const editorWidth = Math.max(24, placed.width * scale - 6);
-  const editorHeight = Math.max(24, placed.height * scale - 6);
+  const insets = textInsets(node.shape, placed.height);
+  const editorWidth = Math.max(24, (placed.width - insets.left - insets.right) * scale);
+  const editorHeight = Math.max(24, (placed.height - insets.top - insets.bottom) * scale);
   const fontSize = (node.fontSize || 19) * scale;
   const lineHeight = fontSize * 1.2;
   const lineCount = displayLines(node.label).length;
-  inlineEditor.style.left = `${insetX + (placed.x - minX) * scale + 3}px`;
-  inlineEditor.style.top = `${insetY + (placed.y - minY) * scale + 3}px`;
+  inlineEditor.style.left = `${insetX + (placed.x + insets.left - minX) * scale}px`;
+  inlineEditor.style.top = `${insetY + (placed.y + insets.top - minY) * scale}px`;
   inlineEditor.style.width = `${editorWidth}px`;
   inlineEditor.style.height = `${editorHeight}px`;
   inlineEditor.style.fontSize = `${fontSize}px`;
@@ -459,9 +454,10 @@ function render() {
     const lines = displayLines(node.label);
     const fontSize = node.fontSize || 19;
     const lineHeight = fontSize * 1.2;
-    const textStart = placed.y + placed.height / 2 - ((lines.length - 1) * lineHeight) / 2 + fontSize * 0.32 +
-      (node.shape === 'database' ? databaseRadius(placed.height) * 0.75 : 0);
-    const text = element('text', { class: 'node-label', x: placed.x + placed.width / 2, y: textStart, 'text-anchor': 'middle', 'font-size': fontSize, fill: '#000', stroke: '#000', 'stroke-width': node.fontWeight === 700 ? 0.65 : 0.2, 'paint-order': 'stroke fill', 'font-family': 'Berkeley Mono, Menlo, monospace', 'font-weight': node.fontWeight || 500, 'letter-spacing': 0.7 });
+    const insets = textInsets(node.shape, placed.height);
+    const textStart = placed.y + insets.top + (placed.height - insets.top - insets.bottom) / 2 -
+      ((lines.length - 1) * lineHeight) / 2 + fontSize * 0.32;
+    const text = element('text', { class: 'node-label', x: placed.x + placed.width / 2, y: textStart, 'text-anchor': 'middle', 'font-size': fontSize, fill: '#000', stroke: '#000', 'stroke-width': node.fontWeight === 700 ? 0.65 : 0.2, 'paint-order': 'stroke fill', 'font-family': 'Berkeley Mono, Menlo, monospace', 'font-weight': node.fontWeight || 500, 'letter-spacing': TEXT_LETTER_SPACING });
     lines.forEach((line, lineIndex) => {
       const span = element('tspan', { x: placed.x + placed.width / 2, dy: lineIndex ? lineHeight : 0 });
       span.textContent = line.toUpperCase();
@@ -735,7 +731,16 @@ document.querySelectorAll('[data-border-style]').forEach(button => button.addEve
   const node = documentState.nodes.find(item => selected?.type === 'node' && item.id === selected.id);
   if (!node) return;
   node.shape = button.dataset.borderStyle;
+  const minimum = minimumTextNodeSize(node);
+  const needsResize = node.width < minimum.width || node.height < minimum.height;
+  if (needsResize) beginManualLayout();
   persist();
+  if (needsResize) {
+    updateLayout();
+    node.baseWidth = Math.max(node.baseWidth || 0, node.width);
+    node.baseHeight = Math.max(node.baseHeight || 0, node.height);
+    persist();
+  }
   setSelection(selected);
 }));
 inlineEditor.addEventListener('input', event => {
