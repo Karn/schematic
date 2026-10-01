@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { displayLines, layoutDiagram, nodeSize } from '../layout.js';
+import { displayLines } from '../layout.js';
 import { referenceLayout, referenceTemplate } from '../reference-template.js';
 import { layoutPositioned } from '../positioned-layout.js';
 
@@ -18,16 +18,21 @@ function crossesInterior(a, b, node) {
   return true;
 }
 
-test('orthogonal routes avoid unrelated blocks in a branched diagram', async () => {
+test('orthogonal routes avoid unrelated blocks in a branched diagram', () => {
   const nodes = ['Input source', 'Signal processor', 'Output stage', 'Control unit', 'Status monitor']
-    .map((label, index) => ({ id: `n${index + 1}`, label }));
+    .map((label, index) => ({
+      id: `n${index + 1}`, label,
+      x: [0, 200, 400, 100, 300][index],
+      y: [100, 100, 100, 250, -50][index],
+      width: 120, height: 66,
+    }));
   const edges = [
     { id: 'e1', from: 'n1', fromSide: 'east', to: 'n2', toSide: 'west' },
     { id: 'e2', from: 'n2', fromSide: 'east', to: 'n3', toSide: 'west' },
     { id: 'e3', from: 'n4', fromSide: 'east', to: 'n2', toSide: 'south' },
     { id: 'e4', from: 'n2', fromSide: 'north', to: 'n5', toSide: 'west' },
   ];
-  const result = await layoutDiagram(nodes, edges);
+  const result = layoutPositioned({ nodes, edges, positioned: true });
   assert.equal(result.edges.length, edges.length);
   for (const routed of result.edges) {
     const original = edges.find(edge => edge.id === routed.id);
@@ -50,9 +55,10 @@ test('long labels remain inside their node instead of being clipped', () => {
   const lines = displayLines(label);
   assert.equal(lines.join(''), label);
   assert.ok(lines.every(line => line.length <= 23));
-  const size = nodeSize({ label });
-  assert.ok(size.width >= Math.max(...lines.map(line => line.length)) * 11.5 + 32);
-  assert.ok(size.height >= 28 + lines.length * 19 * 1.2);
+  const node = { id: 'long', label, baseLabel: 'Text', x: 0, y: 0, width: 90, height: 40, baseWidth: 90, baseHeight: 40, fontSize: 19 };
+  const size = layoutPositioned({ nodes: [node], edges: [], positioned: true }).children[0];
+  assert.ok(size.width >= Math.max(...lines.map(line => line.length)) * 19 * 0.61 + 12);
+  assert.ok(size.height >= lines.length * 19 * 1.2 + 12);
 });
 
 test('reference composition routes avoid unrelated blocks', () => {

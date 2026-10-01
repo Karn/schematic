@@ -1,19 +1,18 @@
 # Schematic
 
-A small system diagram editor built with the same plain HTML, CSS, and JavaScript app structure as `../side-by-side`. It uses `elkjs` for new diagrams and a fixed-position orthogonal router when editing the traced starter composition.
+A small system diagram editor built with the same plain HTML, CSS, and JavaScript app structure as `../side-by-side`. Its local orthogonal router adjusts arrows around placed nodes.
 
 ## Run
 
 ```sh
-npm install
-npm run dev
+python3 -m http.server 8000
 ```
 
-Open the local URL printed by Vite. Use `npm run build` for a production build and `npm test` for the route geometry check.
+Open `http://localhost:8000`. There is no build step or runtime dependency. To run the route and editor tests, use `npm install` followed by `npm test`.
 
 ## GitHub Pages
 
-The production build uses `/schematic/` as its base path for `https://karn.github.io/schematic/`; local development stays at `/`. In the repository's **Settings → Pages**, set **Source** to **GitHub Actions**. The workflow in `.github/workflows/pages.yml` runs tests, builds the site, and deploys `dist` when `main` is pushed. The site is static; diagrams stay in each browser's local storage.
+In the repository's **Settings → Pages**, set **Source** to **Deploy from a branch**, select `main` and `/ (root)`. GitHub Pages can serve the files directly at `https://karn.github.io/schematic/`. Diagrams stay in each browser's local storage.
 
 The starter diagram recreates the supplied 600 × 600 print with editable labels and boxes. It uses a white background, uppercase monospaced text, square or double boxes, black right-angle arrows, and optional offset halftone shadows. Double click the canvas to add a text node; choose no border, a single border, or a double border in the inspector. Edits preserve the existing arrangement, fit changed text, and reroute affected arrows. **Reference sample** restores the traced composition.
 

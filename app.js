@@ -1,4 +1,4 @@
-import { displayLines, layoutDiagram, portId, SIDES } from './layout.js';
+import { displayLines, portId, SIDES } from './layout.js';
 import { referenceLayout, referenceTemplate } from './reference-template.js';
 import { layoutPositioned } from './positioned-layout.js';
 
@@ -423,7 +423,7 @@ async function updateLayout() {
   clearTimeout(layoutTimer);
   $('layout-status').textContent = 'Routing arrows…';
   try {
-    const result = documentState.preset ? referenceLayout(documentState) : documentState.positioned ? layoutPositioned(documentState) : await layoutDiagram(documentState.nodes, documentState.edges);
+    const result = documentState.preset ? referenceLayout(documentState) : layoutPositioned(documentState);
     if (serial !== layoutSerial) return;
     layout = result;
     render();
@@ -627,6 +627,7 @@ function exportSvg() {
   if (!layout || !documentState.nodes.length) return;
   const copy = svg.cloneNode(true);
   copy.querySelector('#canvas-tiles')?.remove();
+  copy.querySelector('#canvas-tile')?.remove();
   copy.querySelectorAll('.port,.edge-hit,.node-hover-outline').forEach(node => node.remove());
   copy.querySelectorAll('.selected,.editing').forEach(node => node.classList.remove('selected', 'editing'));
   copy.querySelectorAll('[tabindex],[role],[aria-label],[data-node-id],[data-edge-id]').forEach(node => {

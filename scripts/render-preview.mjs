@@ -19,7 +19,7 @@ for (let attempt = 0; attempt < 100 && document.getElementById('layout-status').
 }
 if (document.getElementById('layout-status').textContent !== 'Auto layout on') throw Error('Layout did not finish');
 if (process.argv.includes('--edited')) {
-  document.querySelector('[data-node-id="n3"]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  document.querySelector('[data-node-id="n3"]').dispatchEvent(new dom.window.MouseEvent('dblclick', { bubbles: true }));
   const editor = document.getElementById('inline-editor');
   editor.value = 'A VERY LONG UPDATED JAVASCRIPT LIBRARY';
   editor.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
@@ -27,8 +27,9 @@ if (process.argv.includes('--edited')) {
     await new Promise(resolve => setTimeout(resolve, 20));
   }
   document.querySelector('[data-border="1"]').click();
-  document.querySelector('[data-port-id="n3-south"]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
-  document.querySelector('[data-port-id="n10-west"]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  document.querySelector('[data-port-id="n3-south"]').dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 100, clientY: 100 }));
+  dom.window.dispatchEvent(new dom.window.MouseEvent('pointermove', { bubbles: true, clientX: 200, clientY: 200 }));
+  document.querySelector('[data-port-id="n10-west"]').dispatchEvent(new dom.window.MouseEvent('pointerup', { bubbles: true, clientX: 200, clientY: 200 }));
   for (let attempt = 0; attempt < 100 && document.querySelectorAll('#edges-layer .edge').length !== 17; attempt++) {
     await new Promise(resolve => setTimeout(resolve, 20));
   }
@@ -37,6 +38,6 @@ if (process.argv.includes('--edited')) {
 document.getElementById('export-svg').click();
 if (!exported) throw Error('SVG export did not run');
 const path = process.argv[2] || '/tmp/schematic-preview.svg';
-await writeFile(path, await exported.text());
+await writeFile(path, (await exported.text()).replace(/^[\t ]+$/gm, ''));
 console.log(path);
 dom.window.close();
