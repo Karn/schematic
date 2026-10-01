@@ -109,6 +109,23 @@ test('node editing, directional linking, and SVG export keep the print style', a
     $('node-shadow-toggle').checked = false;
     $('node-shadow-toggle').dispatchEvent(new window.Event('change', { bubbles: true }));
     assert.equal(window.document.querySelectorAll('#shadows-layer .node-shadow').length, shadowsBefore - 1);
+    assert.equal(window.document.querySelector('[aria-label="Entity shape"]')?.children.length, 4);
+    window.document.querySelector('[data-border-style="database"]').click();
+    const databaseNode = window.document.querySelector('[data-node-id="n3"]');
+    assert.ok(databaseNode.querySelector('path.node-shape'));
+    assert.ok(databaseNode.querySelector('ellipse.node-database-top'));
+    assert.ok(databaseNode.querySelector('path.node-hover-outline'));
+    assert.equal(databaseNode.querySelector('.node-shape').getAttribute('stroke-width'), '3');
+    assert.equal(databaseNode.querySelector('.node-inner-border'), null);
+    assert.deepEqual(JSON.parse(localStorage.getItem('schematic-editor-v2')).nodes.find(node => node.id === 'n3').shape, 'database');
+    assert.deepEqual([
+      databaseNode.querySelector('[data-port-id="n3-east"] .port-dot').getAttribute('cx'),
+      databaseNode.querySelector('[data-port-id="n3-east"] .port-dot').getAttribute('cy'),
+    ], singleGeometry.slice(-2));
+    $('export-svg').click();
+    assert.match(await exported.text(), /class="node-database-top"/);
+    window.document.querySelector('[data-border-style="box"]').click();
+    assert.deepEqual(boxGeometry(), singleGeometry);
 
     const sourcePort = window.document.querySelector('[data-port-id="n1-south"]');
     sourcePort.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));

@@ -16,6 +16,7 @@ const nodesLayer = $('nodes-layer');
 const edgesLayer = $('edges-layer');
 const inspector = document.querySelector('.inspector');
 const defaultDiagram = referenceTemplate;
+const ENTITY_SHAPES = ['box', 'double', 'text', 'database'];
 
 function fitsPresetNode(node, label) {
   if (!Number.isFinite(node.width) || !Number.isFinite(node.height)) return false;
@@ -35,6 +36,7 @@ function loadDocument() {
         template.nodes.forEach(node => {
           const previous = savedNodes.get(node.id);
           if (previous) {
+            if (ENTITY_SHAPES.includes(previous.shape)) node.shape = previous.shape;
             node.border = [1, 2, 3].includes(previous.border) ? previous.border : node.border;
             node.shadow = Boolean(previous.shadow);
             if (typeof previous.label === 'string' && fitsPresetNode(node, previous.label)) node.label = previous.label;
@@ -56,7 +58,7 @@ function loadDocument() {
           id: node.id,
           label: String(node.label ?? 'Untitled block').slice(0, 240),
           baseLabel: typeof node.baseLabel === 'string' ? node.baseLabel : String(node.label ?? 'Untitled block').slice(0, 240),
-          shape: ['box', 'double', 'text'].includes(node.shape) ? node.shape : 'box',
+          shape: ENTITY_SHAPES.includes(node.shape) ? node.shape : 'box',
           border: [1, 2, 3].includes(node.border) ? node.border : 1,
           shadow: Boolean(node.shadow),
           fontSize: Number.isFinite(node.fontSize) ? node.fontSize : 19,
@@ -103,6 +105,20 @@ function endpoint(node, side) {
   if (side === 'south') return { x, y: node.y + node.height };
   if (side === 'east') return { x: node.x + node.width, y };
   return { x: node.x, y };
+}
+
+function databaseRadius(height) {
+  return Math.min(10, height / 5);
+}
+
+function databaseBodyPath(x, y, width, height) {
+  const radius = databaseRadius(height);
+  return `M ${x} ${y + radius} L ${x} ${y + height - radius} A ${width / 2} ${radius} 0 0 0 ${x + width} ${y + height - radius} L ${x + width} ${y + radius} Z`;
+}
+
+function databaseOutlinePath(x, y, width, height) {
+  const radius = databaseRadius(height);
+  return `M ${x} ${y + radius} A ${width / 2} ${radius} 0 0 1 ${x + width} ${y + radius} L ${x + width} ${y + height - radius} A ${width / 2} ${radius} 0 0 1 ${x} ${y + height - radius} Z`;
 }
 
 function viewportScale() {
@@ -357,20 +373,49 @@ function render() {
       if (keyboardConnection) commitConnection(keyboardConnection.nodeId, keyboardConnection.side, node.id);
       else setSelection({ type: 'node', id: node.id }, event.key === 'Enter');
     });
-    if (node.shadow && node.shape !== 'text') shadowsLayer.append(element('rect', {
-      class: 'node-shadow', x: placed.x + 14, y: placed.y + 27, width: placed.width + 9, height: placed.height + 1,
-      fill: 'url(#halftone)',
-    }));
+    if (node.shadow && node.shape !== 'text') {
+      if (node.shape === 'database') {
+        const shadowX = placed.x + 14;
+        const shadowY = placed.y + 27;
+        const shadowWidth = placed.width + 9;
+        const shadowHeight = placed.height + 1;
+        const shadowRadius = databaseRadius(shadowHeight);
+        shadowsLayer.append(element('path', {
+          class: 'node-shadow', d: databaseBodyPath(shadowX, shadowY, shadowWidth, shadowHeight), fill: 'url(#halftone)',
+        }));
+        shadowsLayer.append(element('ellipse', {
+          class: 'node-shadow', cx: shadowX + shadowWidth / 2, cy: shadowY + shadowRadius,
+          rx: shadowWidth / 2, ry: shadowRadius, fill: 'url(#halftone)',
+        }));
+      } else {
+        shadowsLayer.append(element('rect', {
+          class: 'node-shadow', x: placed.x + 14, y: placed.y + 27, width: placed.width + 9, height: placed.height + 1,
+          fill: 'url(#halftone)',
+        }));
+      }
+    }
     backingsLayer.append(element('rect', {
       class: 'node-backing', x: placed.x - 9, y: placed.y - 9,
       width: placed.width + 18, height: placed.height + 18, fill: '#fff',
     }));
-    group.append(element('rect', {
-      class: 'node-shape', x: placed.x, y: placed.y, width: placed.width, height: placed.height,
-      fill: node.shape === 'text' ? 'transparent' : '#fff',
-      stroke: node.shape === 'text' ? 'none' : '#000', 'stroke-width': node.border,
-    }));
-    if (node.shape !== 'text') {
+    if (node.shape === 'database') {
+      const radius = databaseRadius(placed.height);
+      group.append(element('path', {
+        class: 'node-shape', d: databaseBodyPath(placed.x, placed.y, placed.width, placed.height),
+        fill: '#fff', stroke: '#000', 'stroke-width': node.border,
+      }));
+      group.append(element('ellipse', {
+        class: 'node-database-top', cx: placed.x + placed.width / 2, cy: placed.y + radius,
+        rx: placed.width / 2, ry: radius, fill: '#fff', stroke: '#000', 'stroke-width': node.border,
+      }));
+    } else {
+      group.append(element('rect', {
+        class: 'node-shape', x: placed.x, y: placed.y, width: placed.width, height: placed.height,
+        fill: node.shape === 'text' ? 'transparent' : '#fff',
+        stroke: node.shape === 'text' ? 'none' : '#000', 'stroke-width': node.border,
+      }));
+    }
+    if (node.shape === 'box' || node.shape === 'double') {
       group.append(element('rect', {
         class: 'node-inner-border', x: placed.x + 4, y: placed.y + 4,
         width: Math.max(0, placed.width - 8), height: Math.max(0, placed.height - 8),
@@ -380,7 +425,8 @@ function render() {
     const lines = displayLines(node.label);
     const fontSize = node.fontSize || 19;
     const lineHeight = fontSize * 1.2;
-    const textStart = placed.y + placed.height / 2 - ((lines.length - 1) * lineHeight) / 2 + fontSize * 0.32;
+    const textStart = placed.y + placed.height / 2 - ((lines.length - 1) * lineHeight) / 2 + fontSize * 0.32 +
+      (node.shape === 'database' ? databaseRadius(placed.height) * 0.75 : 0);
     const text = element('text', { class: 'node-label', x: placed.x + placed.width / 2, y: textStart, 'text-anchor': 'middle', 'font-size': fontSize, fill: '#000', stroke: '#000', 'stroke-width': node.fontWeight === 700 ? 0.65 : 0.2, 'paint-order': 'stroke fill', 'font-family': 'Berkeley Mono, Menlo, monospace', 'font-weight': node.fontWeight || 500, 'letter-spacing': 0.7 });
     lines.forEach((line, lineIndex) => {
       const span = element('tspan', { x: placed.x + placed.width / 2, dy: lineIndex ? lineHeight : 0 });
@@ -388,10 +434,16 @@ function render() {
       text.append(span);
     });
     group.append(text);
-    group.append(element('rect', {
-      class: 'node-hover-outline', x: placed.x + 3, y: placed.y + 3,
-      width: Math.max(0, placed.width - 6), height: Math.max(0, placed.height - 6),
-    }));
+    if (node.shape === 'database') {
+      group.append(element('path', {
+        class: 'node-hover-outline', d: databaseOutlinePath(placed.x + 3, placed.y + 3, placed.width - 6, placed.height - 6),
+      }));
+    } else {
+      group.append(element('rect', {
+        class: 'node-hover-outline', x: placed.x + 3, y: placed.y + 3,
+        width: Math.max(0, placed.width - 6), height: Math.max(0, placed.height - 6),
+      }));
+    }
     for (const side of SIDES) {
       const point = endpoint(placed, side);
       const port = element('g', { class: `port${connectionDrag?.nodeId === node.id && connectionDrag.side === side ? ' active' : ''}`, 'data-port-id': portId(node.id, side), 'data-side': side, role: 'button', tabindex: editingNodeId ? -1 : 0, 'aria-label': `Drag from ${side} side of ${node.label} to another block` });
