@@ -541,15 +541,9 @@ function setSelection(selection, focusText = false) {
   inspector.classList.toggle('open', !!selection);
   if (node) {
     $('node-shadow-toggle').checked = node.shadow;
-    $('border-thickness-control').hidden = node.shape === 'text';
     $('shadow-control').hidden = node.shape === 'text';
     document.querySelectorAll('[data-border-style]').forEach(button => {
       const active = button.dataset.borderStyle === node.shape;
-      button.classList.toggle('active', active);
-      button.setAttribute('aria-pressed', String(active));
-    });
-    document.querySelectorAll('[data-border]').forEach(button => {
-      const active = Number(button.dataset.border) === node.border;
       button.classList.toggle('active', active);
       button.setAttribute('aria-pressed', String(active));
     });
@@ -741,13 +735,6 @@ document.querySelectorAll('[data-border-style]').forEach(button => button.addEve
   const node = documentState.nodes.find(item => selected?.type === 'node' && item.id === selected.id);
   if (!node) return;
   node.shape = button.dataset.borderStyle;
-  persist();
-  setSelection(selected);
-}));
-document.querySelectorAll('[data-border]').forEach(button => button.addEventListener('click', () => {
-  const node = documentState.nodes.find(item => selected?.type === 'node' && item.id === selected.id);
-  if (!node) return;
-  node.border = Number(button.dataset.border);
   persist();
   setSelection(selected);
 }));

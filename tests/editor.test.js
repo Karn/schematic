@@ -83,11 +83,12 @@ test('node editing, directional linking, and SVG export keep the receipt splitte
     assert.equal(editedDocument.positioned, true);
     assert.ok(editedDocument.nodes.find(node => node.id === 'n3').width > 130);
     assert.deepEqual(editedDocument.nodes.find(node => node.id === 'n1').x, 40);
-    window.document.querySelector('[data-border="3"]').click();
+    window.document.querySelector('[data-border-style="double"]').click();
     assert.equal($('inline-editor').hidden, true);
     assert.equal($('diagram').classList.contains('editing'), false);
     assert.equal(window.document.querySelector('[data-port-id="n1-east"]').getAttribute('tabindex'), '0');
-    assert.equal(window.document.querySelector('[data-node-id="n3"] .node-shape').getAttribute('stroke-width'), '3');
+    assert.equal(window.document.querySelector('[data-node-id="n3"] .node-shape').getAttribute('stroke-width'), '1');
+    assert.equal(window.document.querySelector('[data-border]'), null);
     window.document.querySelector('[data-border-style="box"]').click();
     const boxGeometry = () => {
       const shape = window.document.querySelector('[data-node-id="n3"] .node-shape');
@@ -101,11 +102,9 @@ test('node editing, directional linking, and SVG export keep the receipt splitte
     assert.deepEqual(boxGeometry(), singleGeometry);
     assert.equal(JSON.parse(localStorage.getItem('schematic-editor-v2')).nodes.find(node => node.id === 'n3').shape, 'double');
     window.document.querySelector('[data-border-style="text"]').click();
-    assert.equal($('border-thickness-control').hidden, true);
     assert.equal($('shadow-control').hidden, true);
     assert.equal(window.document.querySelector('[data-node-id="n3"] .node-shape').getAttribute('stroke'), 'none');
     window.document.querySelector('[data-border-style="box"]').click();
-    assert.equal($('border-thickness-control').hidden, false);
     assert.equal(window.document.querySelector('[data-node-id="n3"] .node-inner-border').getAttribute('stroke'), '#fff');
     assert.deepEqual(boxGeometry(), singleGeometry);
     const shadowsBefore = window.document.querySelectorAll('#shadows-layer .node-shadow').length;
@@ -118,7 +117,7 @@ test('node editing, directional linking, and SVG export keep the receipt splitte
     assert.ok(databaseNode.querySelector('path.node-shape'));
     assert.ok(databaseNode.querySelector('ellipse.node-database-top'));
     assert.ok(databaseNode.querySelector('path.node-hover-outline'));
-    assert.equal(databaseNode.querySelector('.node-shape').getAttribute('stroke-width'), '3');
+    assert.equal(databaseNode.querySelector('.node-shape').getAttribute('stroke-width'), '1');
     assert.equal(databaseNode.querySelector('.node-inner-border'), null);
     assert.equal(window.document.querySelectorAll('#backings-layer .node-backing[mask]').length, 3);
     assert.equal(window.document.querySelectorAll('#shape-masks mask').length, 3);

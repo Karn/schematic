@@ -26,7 +26,7 @@ if (process.argv.includes('--edited')) {
   for (let attempt = 0; attempt < 100 && !(JSON.parse(localStorage.getItem('schematic-editor-v2'))?.nodes.find(node => node.id === 'n3')?.width > 130); attempt++) {
     await new Promise(resolve => setTimeout(resolve, 20));
   }
-  document.querySelector('[data-border="1"]').click();
+  document.querySelector('[data-border-style="double"]').click();
   document.querySelector('[data-port-id="n3-south"]').dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 100, clientY: 100 }));
   dom.window.dispatchEvent(new dom.window.MouseEvent('pointermove', { bubbles: true, clientX: 200, clientY: 200 }));
   document.querySelector('[data-port-id="n7-west"]').dispatchEvent(new dom.window.MouseEvent('pointerup', { bubbles: true, clientX: 200, clientY: 200 }));
