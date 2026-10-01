@@ -1,0 +1,44 @@
+/* Diagram artwork matches the reference's monochrome technical print. */
+.canvas-viewport { background: #fff; }
+.canvas-grid { display: none; }
+.diagram #canvas-tiles { pointer-events: all; }
+.diagram .node-backing, .diagram .node-shadow { pointer-events: none; }
+.diagram.panning, .diagram.panning * { cursor: grabbing !important; }
+.diagram.space-pan { cursor: grab; }
+.shape-icon { border-color: #111; background: #fff; box-shadow: 3px 3px 0 #d9d9d9; border-radius: 0; }
+.text-icon { border: 0; box-shadow: none; font: 700 10px 'Berkeley Mono', Menlo, monospace; display: grid; place-items: center; }
+.diagram .node { cursor: grab; }
+.diagram .node:active { cursor: grabbing; }
+.diagram .node:focus, .diagram .port:focus { outline: none; }
+.diagram .node:hover .node-shape,
+.diagram .node.selected .node-shape { stroke: #000; }
+.diagram .node.shape-text:hover .node-shape,
+.diagram .node.shape-text.selected .node-shape { stroke: none; }
+.diagram .node .node-hover-outline {
+  fill: none; stroke: #000; stroke-width: 1; stroke-dasharray: 3 3;
+  visibility: hidden; pointer-events: none;
+}
+.diagram .node:hover .node-hover-outline,
+.diagram .node:focus-visible .node-hover-outline,
+.diagram .node.selected .node-hover-outline { visibility: visible; }
+.diagram .node[data-node-id] .node-label { font-family: 'Berkeley Mono', Menlo, monospace; fill: #000; }
+.diagram .node.editing .node-label { visibility: hidden; }
+.diagram .edge-line { stroke: #000; stroke-width: 1.5; stroke-linecap: square; stroke-linejoin: miter; }
+.diagram .edge-knockout { stroke: #fff; stroke-width: 18; fill: none; pointer-events: none; }
+.diagram .edge:hover .edge-line,
+.diagram .edge.selected .edge-line { stroke: #000; stroke-width: 2; }
+.diagram .port-halo { fill: #fff; stroke: #111; }
+.diagram .port-dot { fill: #111; }
+.diagram .node:hover .port,
+.diagram .node.selected .port,
+.diagram.connecting .node .port { opacity: 0; }
+.diagram .node .port { pointer-events: all; }
+.diagram .node .port:hover,
+.diagram .node .port:focus-visible { opacity: 1; }
+.diagram.editing .node .port,
+.diagram.editing .node .port:hover,
+.diagram.editing .node .port:focus-visible { opacity: 0; pointer-events: none; }
+.diagram .port:hover .port-halo,
+.diagram .port.active .port-halo { fill: #111; stroke: #111; }
+.diagram.connecting .node .port.active { opacity: 1; }
+.diagram .connection-preview, .diagram .connection-preview-knockout { pointer-events: none; }
