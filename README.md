@@ -14,9 +14,9 @@ Open `http://localhost:8000`. There is no build step or runtime dependency. To r
 
 In the repository's **Settings → Pages**, set **Source** to **Deploy from a branch**, select `main` and `/ (root)`. GitHub Pages can serve the files directly at `https://karn.github.io/schematic/`. Diagrams stay in each browser's local storage.
 
-The starter diagram recreates the supplied 600 × 600 print with editable labels and boxes. It uses a white background, uppercase monospaced text, square or double boxes, black right-angle arrows, and optional offset halftone shadows. Double click the canvas to add a text node; choose None, Single, Double, or Database under Entity shape in the inspector. Edits preserve the existing arrangement, fit changed text, and reroute affected arrows. **Reference sample** restores the traced composition.
+The starter diagram shows a receipt splitting app: mobile and web clients reach an API server, which works with a receipt parser, split engine, and two databases. It uses a white background, uppercase monospaced text, black right-angle arrows, and optional offset halftone shadows. Double click the canvas to add a text node; choose None, Single, Double, or Database under Entity shape in the inspector. Edits preserve the existing arrangement, fit changed text, and reroute affected arrows. **Sample** restores the starter diagram.
 
-For the closest match, the app and exported SVG use the locally installed **Berkeley Mono** font. On another machine, the SVG falls back to Menlo or the system monospace font.
+The app and exported SVG use the locally installed **Berkeley Mono** font. On another machine, the SVG falls back to Menlo or the system monospace font.
 
 The editor controls use the same monochrome, square-cornered style, with compact panels to keep more room for the artboard.
 

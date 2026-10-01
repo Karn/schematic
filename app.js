@@ -1,5 +1,5 @@
 import { displayLines, portId, SIDES } from './layout.js';
-import { referenceLayout, referenceTemplate } from './reference-template.js';
+import { sampleLayout, sampleTemplate } from './sample-template.js';
 import { layoutPositioned } from './positioned-layout.js';
 
 const STORAGE_KEY = 'schematic-editor-v2';
@@ -7,6 +7,7 @@ const svgNS = 'http://www.w3.org/2000/svg';
 const $ = id => document.getElementById(id);
 const svg = $('diagram');
 const canvasTiles = $('canvas-tiles');
+const shapeMasks = $('shape-masks');
 const inlineEditor = $('inline-editor');
 const viewport = $('canvas-viewport');
 const shadowsLayer = $('shadows-layer');
@@ -15,8 +16,16 @@ const edgeKnockoutsLayer = $('edge-knockouts-layer');
 const nodesLayer = $('nodes-layer');
 const edgesLayer = $('edges-layer');
 const inspector = document.querySelector('.inspector');
-const defaultDiagram = referenceTemplate;
+const defaultDiagram = sampleTemplate;
 const ENTITY_SHAPES = ['box', 'double', 'text', 'database'];
+const LEGACY_SHAPES = ['box', 'text', 'box', 'box', 'box', 'box', 'box', 'box', 'text', 'box', 'text', 'text', 'box', 'box', 'box', 'box', 'double', 'box', 'text', 'text'];
+const LEGACY_SHADOWS = new Set(['n1', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n10', 'n15']);
+
+function isUntouchedLegacySample(saved) {
+  return saved.nodes.length === 20 && saved.edges.length === 16 && saved.nodes.every((node, index) =>
+    node.id === `n${index + 1}` && node.label === node.baseLabel && node.shape === LEGACY_SHAPES[index] &&
+    node.border === 1 && Boolean(node.shadow) === LEGACY_SHADOWS.has(node.id));
+}
 
 function fitsPresetNode(node, label) {
   if (!Number.isFinite(node.width) || !Number.isFinite(node.height)) return false;
@@ -31,18 +40,24 @@ function loadDocument() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (saved && Array.isArray(saved.nodes) && Array.isArray(saved.edges)) {
       if (saved.preset) {
-        const template = referenceTemplate();
-        const savedNodes = new Map(saved.nodes.map(node => [node.id, node]));
-        template.nodes.forEach(node => {
-          const previous = savedNodes.get(node.id);
-          if (previous) {
-            if (ENTITY_SHAPES.includes(previous.shape)) node.shape = previous.shape;
-            node.border = [1, 2, 3].includes(previous.border) ? previous.border : node.border;
-            node.shadow = Boolean(previous.shadow);
-            if (typeof previous.label === 'string' && fitsPresetNode(node, previous.label)) node.label = previous.label;
-          }
-        });
-        return template;
+        const template = sampleTemplate();
+        if (saved.sampleId !== template.sampleId) {
+          if (isUntouchedLegacySample(saved)) return template;
+          saved.preset = false;
+          saved.positioned = true;
+        } else {
+          const savedNodes = new Map(saved.nodes.map(node => [node.id, node]));
+          template.nodes.forEach(node => {
+            const previous = savedNodes.get(node.id);
+            if (previous) {
+              if (ENTITY_SHAPES.includes(previous.shape)) node.shape = previous.shape;
+              node.border = [1, 2, 3].includes(previous.border) ? previous.border : node.border;
+              node.shadow = Boolean(previous.shadow);
+              if (typeof previous.label === 'string' && fitsPresetNode(node, previous.label)) node.label = previous.label;
+            }
+          });
+          return template;
+        }
       }
       const ids = new Set(saved.nodes.map(node => node.id));
       const positioned = Boolean(saved.positioned) || (!saved.preset && saved.nodes.some(node => Number.isFinite(node.x) && Number.isFinite(node.y)));
@@ -121,6 +136,22 @@ function databaseOutlinePath(x, y, width, height) {
   return `M ${x} ${y + radius} A ${width / 2} ${radius} 0 0 1 ${x + width} ${y + radius} L ${x + width} ${y + height - radius} A ${width / 2} ${radius} 0 0 1 ${x} ${y + height - radius} Z`;
 }
 
+function appendDatabaseMask(placed, maskId, dx, dy, padding = 0) {
+  const x = placed.x + dx;
+  const y = placed.y + dy;
+  const mask = element('mask', {
+    id: maskId, maskUnits: 'userSpaceOnUse', maskContentUnits: 'userSpaceOnUse',
+    x: x - padding, y: y - padding,
+    width: placed.width + 2 * padding, height: placed.height + 2 * padding,
+  });
+  mask.append(element('path', {
+    d: databaseOutlinePath(x, y, placed.width, placed.height), fill: '#fff',
+    ...(padding ? { stroke: '#fff', 'stroke-width': 2 * padding, 'stroke-linejoin': 'round' } : {}),
+  }));
+  shapeMasks.append(mask);
+  return `url(#${maskId})`;
+}
+
 function viewportScale() {
   if (!layout) return 1;
   const { width, height } = viewport.getBoundingClientRect();
@@ -130,7 +161,7 @@ function viewportScale() {
 
 function artworkViewBox() {
   if (layout.viewBox) return layout.viewBox;
-  return layout.isReference ? '0 0 600 600' : `-22 -22 ${Math.max(layout.width + 44, 240)} ${Math.max(layout.height + 44, 160)}`;
+  return layout.isSample ? '0 0 600 600' : `-22 -22 ${Math.max(layout.width + 44, 240)} ${Math.max(layout.height + 44, 160)}`;
 }
 
 function applyCamera() {
@@ -322,6 +353,7 @@ function startInlineEdit(node) {
 
 function render() {
   svg.classList.toggle('editing', !!editingNodeId);
+  shapeMasks.replaceChildren();
   shadowsLayer.replaceChildren();
   backingsLayer.replaceChildren();
   edgeKnockoutsLayer.replaceChildren();
@@ -348,7 +380,7 @@ function render() {
     edgesLayer.append(group);
   }
 
-  layout.children.forEach(placed => {
+  layout.children.forEach((placed, index) => {
     const node = documentState.nodes.find(item => item.id === placed.id);
     if (!node) return;
     const isSelected = selected?.type === 'node' && selected.id === node.id;
@@ -377,15 +409,9 @@ function render() {
       if (node.shape === 'database') {
         const shadowX = placed.x + 14;
         const shadowY = placed.y + 27;
-        const shadowWidth = placed.width + 9;
-        const shadowHeight = placed.height + 1;
-        const shadowRadius = databaseRadius(shadowHeight);
-        shadowsLayer.append(element('path', {
-          class: 'node-shadow', d: databaseBodyPath(shadowX, shadowY, shadowWidth, shadowHeight), fill: 'url(#halftone)',
-        }));
-        shadowsLayer.append(element('ellipse', {
-          class: 'node-shadow', cx: shadowX + shadowWidth / 2, cy: shadowY + shadowRadius,
-          rx: shadowWidth / 2, ry: shadowRadius, fill: 'url(#halftone)',
+        shadowsLayer.append(element('rect', {
+          class: 'node-shadow', x: shadowX, y: shadowY, width: placed.width, height: placed.height,
+          fill: 'url(#halftone)', mask: appendDatabaseMask(placed, `shadow-mask-${index}`, 14, 27),
         }));
       } else {
         shadowsLayer.append(element('rect', {
@@ -394,10 +420,18 @@ function render() {
         }));
       }
     }
-    backingsLayer.append(element('rect', {
-      class: 'node-backing', x: placed.x - 9, y: placed.y - 9,
-      width: placed.width + 18, height: placed.height + 18, fill: '#fff',
-    }));
+    if (node.shape === 'database') {
+      backingsLayer.append(element('rect', {
+        class: 'node-backing', x: placed.x - 9, y: placed.y - 9,
+        width: placed.width + 18, height: placed.height + 18, fill: '#fff',
+        mask: appendDatabaseMask(placed, `backing-mask-${index}`, 0, 0, 9),
+      }));
+    } else {
+      backingsLayer.append(element('rect', {
+        class: 'node-backing', x: placed.x - 9, y: placed.y - 9,
+        width: placed.width + 18, height: placed.height + 18, fill: '#fff',
+      }));
+    }
     if (node.shape === 'database') {
       const radius = databaseRadius(placed.height);
       group.append(element('path', {
@@ -475,7 +509,7 @@ async function updateLayout() {
   clearTimeout(layoutTimer);
   $('layout-status').textContent = 'Routing arrows…';
   try {
-    const result = documentState.preset ? referenceLayout(documentState) : layoutPositioned(documentState);
+    const result = documentState.preset ? sampleLayout(documentState) : layoutPositioned(documentState);
     if (serial !== layoutSerial) return;
     layout = result;
     render();
@@ -746,9 +780,9 @@ $('delete-node').addEventListener('click', deleteSelection);
 $('delete-edge').addEventListener('click', deleteSelection);
 $('close-inspector').addEventListener('click', () => setSelection(null));
 $('export-svg').addEventListener('click', exportSvg);
-$('load-reference').addEventListener('click', () => {
-  if (documentState.nodes.length && !window.confirm('Replace the current diagram with the reference sample?')) return;
-  documentState = referenceTemplate();
+$('load-sample').addEventListener('click', () => {
+  if (documentState.nodes.length && !window.confirm('Replace the current diagram with the receipt splitter sample?')) return;
+  documentState = sampleTemplate();
   selected = null;
   cancelConnection();
   setSelection(null);

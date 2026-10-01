@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { JSDOM } from 'jsdom';
 
-test('node editing, directional linking, and SVG export keep the print style', async () => {
+test('node editing, directional linking, and SVG export keep the receipt splitter sample', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const dom = new JSDOM(html, { url: 'http://localhost/' });
   const { window } = dom;
@@ -27,13 +27,15 @@ test('node editing, directional linking, and SVG export keep the print style', a
       await new Promise(resolve => setTimeout(resolve, 20));
     }
     assert.equal($('layout-status').textContent, 'Auto layout on');
-    assert.equal(window.document.querySelectorAll('#nodes-layer .node').length, 20);
+    assert.equal(window.document.querySelectorAll('#nodes-layer .node').length, 8);
     assert.equal(window.document.querySelectorAll('.palette-item').length, 0);
-    assert.equal(window.document.querySelectorAll('#edges-layer .edge').length, 16);
-    assert.equal(window.document.querySelectorAll('#edge-knockouts-layer .edge-knockout').length, 16);
-    assert.equal(window.document.querySelectorAll('#backings-layer .node-backing').length, 20);
-    assert.equal(window.document.querySelectorAll('#nodes-layer .node-hover-outline').length, 20);
-    assert.equal(window.document.querySelector('.node-label').textContent, 'NOSQL');
+    assert.equal(window.document.querySelectorAll('#edges-layer .edge').length, 8);
+    assert.equal(window.document.querySelectorAll('#edge-knockouts-layer .edge-knockout').length, 8);
+    assert.equal(window.document.querySelectorAll('#backings-layer .node-backing').length, 8);
+    assert.equal(window.document.querySelectorAll('#nodes-layer .node-hover-outline').length, 8);
+    assert.equal(window.document.querySelector('.node-label').textContent, 'MOBILE APP');
+    assert.equal(window.document.querySelectorAll('#backings-layer .node-backing[mask]').length, 2);
+    assert.equal(window.document.querySelectorAll('#shadows-layer .node-shadow[mask]').length, 0);
     assert.equal(window.document.querySelector('.node-shape').getAttribute('rx'), null);
     assert.ok(window.document.querySelector('.node-shadow[fill="url(#halftone)"]'));
     const fittedView = $('diagram').getAttribute('viewBox');
@@ -63,29 +65,30 @@ test('node editing, directional linking, and SVG export keep the print style', a
     assert.equal($('inline-editor').hidden, false);
     assert.equal($('diagram').classList.contains('editing'), true);
     assert.equal(window.document.querySelector('[data-port-id="n1-east"]').getAttribute('tabindex'), '-1');
-    assert.equal($('inline-editor').value, 'JS LIB');
+    assert.equal($('inline-editor').value, 'API SERVER');
     assert.ok(parseFloat($('inline-editor').style.left) > 0);
     assert.ok(parseFloat($('inline-editor').style.width) > 0);
-    $('inline-editor').value = 'JS API';
+    $('inline-editor').value = 'API';
     $('inline-editor').dispatchEvent(new window.Event('input', { bubbles: true }));
     await new Promise(resolve => setTimeout(resolve, 200));
     assert.equal(JSON.parse(localStorage.getItem('schematic-editor-v2')).preset, true);
-    assert.equal(window.document.querySelector('[data-node-id="n3"] .node-label').textContent, 'JS API');
-    $('inline-editor').value = 'Updated label';
+    assert.equal(window.document.querySelector('[data-node-id="n3"] .node-label').textContent, 'API');
+    $('inline-editor').value = 'Updated API server';
     $('inline-editor').dispatchEvent(new window.Event('input', { bubbles: true }));
-    for (let attempt = 0; attempt < 50 && window.document.querySelector('[data-node-id="n3"] .node-label').textContent !== 'UPDATED LABEL'; attempt++) {
+    for (let attempt = 0; attempt < 50 && window.document.querySelector('[data-node-id="n3"] .node-label').textContent !== 'UPDATED API SERVER'; attempt++) {
       await new Promise(resolve => setTimeout(resolve, 20));
     }
-    assert.equal(window.document.querySelector('[data-node-id="n3"] .node-label').textContent, 'UPDATED LABEL');
+    assert.equal(window.document.querySelector('[data-node-id="n3"] .node-label').textContent, 'UPDATED API SERVER');
     const editedDocument = JSON.parse(localStorage.getItem('schematic-editor-v2'));
     assert.equal(editedDocument.positioned, true);
-    assert.ok(editedDocument.nodes.find(node => node.id === 'n3').width > 68);
-    assert.deepEqual(editedDocument.nodes.find(node => node.id === 'n1').x, 39);
+    assert.ok(editedDocument.nodes.find(node => node.id === 'n3').width > 130);
+    assert.deepEqual(editedDocument.nodes.find(node => node.id === 'n1').x, 40);
     window.document.querySelector('[data-border="3"]').click();
     assert.equal($('inline-editor').hidden, true);
     assert.equal($('diagram').classList.contains('editing'), false);
     assert.equal(window.document.querySelector('[data-port-id="n1-east"]').getAttribute('tabindex'), '0');
     assert.equal(window.document.querySelector('[data-node-id="n3"] .node-shape').getAttribute('stroke-width'), '3');
+    window.document.querySelector('[data-border-style="box"]').click();
     const boxGeometry = () => {
       const shape = window.document.querySelector('[data-node-id="n3"] .node-shape');
       const port = window.document.querySelector('[data-port-id="n3-east"] .port-dot');
@@ -117,6 +120,11 @@ test('node editing, directional linking, and SVG export keep the print style', a
     assert.ok(databaseNode.querySelector('path.node-hover-outline'));
     assert.equal(databaseNode.querySelector('.node-shape').getAttribute('stroke-width'), '3');
     assert.equal(databaseNode.querySelector('.node-inner-border'), null);
+    assert.equal(window.document.querySelectorAll('#backings-layer .node-backing[mask]').length, 3);
+    assert.equal(window.document.querySelectorAll('#shape-masks mask').length, 3);
+    $('node-shadow-toggle').checked = true;
+    $('node-shadow-toggle').dispatchEvent(new window.Event('change', { bubbles: true }));
+    assert.ok(window.document.querySelector('#shadows-layer .node-shadow[mask]'));
     assert.deepEqual(JSON.parse(localStorage.getItem('schematic-editor-v2')).nodes.find(node => node.id === 'n3').shape, 'database');
     assert.deepEqual([
       databaseNode.querySelector('[data-port-id="n3-east"] .port-dot').getAttribute('cx'),
@@ -124,13 +132,14 @@ test('node editing, directional linking, and SVG export keep the print style', a
     ], singleGeometry.slice(-2));
     $('export-svg').click();
     assert.match(await exported.text(), /class="node-database-top"/);
+    assert.match(await exported.text(), /id="backing-mask-/);
     window.document.querySelector('[data-border-style="box"]').click();
     assert.deepEqual(boxGeometry(), singleGeometry);
 
     const sourcePort = window.document.querySelector('[data-port-id="n1-south"]');
     sourcePort.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
     window.document.querySelector('[data-port-id="n5-north"]').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
-    assert.equal(window.document.querySelectorAll('#edges-layer .edge').length, 16);
+    assert.equal(window.document.querySelectorAll('#edges-layer .edge').length, 8);
     sourcePort.dispatchEvent(new window.KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
     assert.equal($('connection-status').textContent, 'Choose a destination block');
     window.document.dispatchEvent(new window.KeyboardEvent('keydown', { bubbles: true, key: 'Escape' }));
@@ -140,10 +149,10 @@ test('node editing, directional linking, and SVG export keep the print style', a
     assert.ok(window.document.querySelector('.connection-preview'));
     assert.ok(window.document.querySelector('.connection-preview-knockout'));
     window.document.querySelector('[data-port-id="n5-north"]').dispatchEvent(new window.MouseEvent('pointerup', { bubbles: true, clientX: 140, clientY: 120 }));
-    for (let attempt = 0; attempt < 50 && window.document.querySelectorAll('#edges-layer .edge').length !== 17; attempt++) {
+    for (let attempt = 0; attempt < 50 && window.document.querySelectorAll('#edges-layer .edge').length !== 9; attempt++) {
       await new Promise(resolve => setTimeout(resolve, 20));
     }
-    assert.equal(window.document.querySelectorAll('#edges-layer .edge').length, 17);
+    assert.equal(window.document.querySelectorAll('#edges-layer .edge').length, 9);
     assert.equal(window.document.querySelector('.connection-preview'), null);
     assert.equal(window.document.querySelector('.connection-preview-knockout'), null);
     const newEdge = JSON.parse(localStorage.getItem('schematic-editor-v2')).edges.at(-1);
@@ -153,11 +162,11 @@ test('node editing, directional linking, and SVG export keep the print style', a
     assert.equal(newEdge.toSide, 'north');
     window.document.querySelector('[data-port-id="n1-east"]').dispatchEvent(new window.MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 100, clientY: 100 }));
     $('canvas-tiles').dispatchEvent(new window.MouseEvent('pointerup', { bubbles: true, clientX: 100, clientY: 100 }));
-    assert.equal(window.document.querySelectorAll('#edges-layer .edge').length, 17);
+    assert.equal(window.document.querySelectorAll('#edges-layer .edge').length, 9);
     window.document.querySelector('[data-port-id="n1-east"]').dispatchEvent(new window.MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 100, clientY: 100 }));
     window.dispatchEvent(new window.MouseEvent('pointermove', { bubbles: true, clientX: 200, clientY: 200 }));
     $('canvas-tiles').dispatchEvent(new window.MouseEvent('pointerup', { bubbles: true, clientX: 200, clientY: 200 }));
-    assert.equal(window.document.querySelectorAll('#edges-layer .edge').length, 17);
+    assert.equal(window.document.querySelectorAll('#edges-layer .edge').length, 9);
     const targetShape = window.document.querySelector('[data-node-id="n5"] .node-shape');
     const [viewX, viewY, viewWidth, viewHeight] = $('diagram').getAttribute('viewBox').split(' ').map(Number);
     const targetX = (Number(targetShape.getAttribute('x')) + Number(targetShape.getAttribute('width')) / 2 - viewX) * 800 / viewWidth;
@@ -165,13 +174,13 @@ test('node editing, directional linking, and SVG export keep the print style', a
     window.document.querySelector('[data-port-id="n1-east"]').dispatchEvent(new window.MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 100, clientY: 100 }));
     window.dispatchEvent(new window.MouseEvent('pointermove', { bubbles: true, clientX: targetX, clientY: targetY }));
     window.document.querySelector('[data-node-id="n5"]').dispatchEvent(new window.MouseEvent('pointerup', { bubbles: true, clientX: targetX, clientY: targetY }));
-    for (let attempt = 0; attempt < 50 && window.document.querySelectorAll('#edges-layer .edge').length !== 18; attempt++) {
+    for (let attempt = 0; attempt < 50 && window.document.querySelectorAll('#edges-layer .edge').length !== 10; attempt++) {
       await new Promise(resolve => setTimeout(resolve, 20));
     }
-    assert.equal(window.document.querySelectorAll('#edges-layer .edge').length, 18);
+    assert.equal(window.document.querySelectorAll('#edges-layer .edge').length, 10);
     assert.equal(JSON.parse(localStorage.getItem('schematic-editor-v2')).edges.at(-1).toSide, 'north');
-    assert.equal(window.document.querySelector('[data-node-id="n1"] .node-shape').getAttribute('x'), '39');
-    assert.equal(window.document.querySelector('[data-node-id="n4"] .node-shape').getAttribute('x'), '278');
+    assert.equal(window.document.querySelector('[data-node-id="n1"] .node-shape').getAttribute('x'), '40');
+    assert.equal(window.document.querySelector('[data-node-id="n4"] .node-shape').getAttribute('x'), '425');
     assert.equal(window.document.querySelector('.edge-knockout').getAttribute('stroke-width'), '18');
     $('zoom-in').click();
     assert.notEqual($('diagram').getAttribute('viewBox'), '0 0 600 600');
@@ -179,7 +188,7 @@ test('node editing, directional linking, and SVG export keep the print style', a
     assert.ok(exported);
     const xml = await exported.text();
     assert.match(xml, /id="halftone"/);
-    assert.match(xml, /UPDATED LABEL/);
+    assert.match(xml, /UPDATED API SERVER/);
     assert.match(xml, /fill="#000"/);
     assert.match(xml, /Berkeley Mono/);
     assert.match(xml, /class="edge-knockout"/);
@@ -190,9 +199,9 @@ test('node editing, directional linking, and SVG export keep the print style', a
     assert.doesNotMatch(xml, /node-hover-outline/);
     assert.doesNotMatch(xml, /id="canvas-tiles"/);
     window.confirm = () => true;
-    $('load-reference').click();
+    $('load-sample').click();
     await new Promise(resolve => setTimeout(resolve, 30));
-    assert.equal(window.document.querySelectorAll('#nodes-layer .node').length, 20);
+    assert.equal(window.document.querySelectorAll('#nodes-layer .node').length, 8);
     assert.equal(JSON.parse(localStorage.getItem('schematic-editor-v2')).preset, true);
     const beforeDrag = window.document.querySelector('[data-node-id="n1"] .node-shape');
     const originalY = Number(beforeDrag.getAttribute('y'));
@@ -204,7 +213,7 @@ test('node editing, directional linking, and SVG export keep the print style', a
     assert.ok(Number(moved.getAttribute('y')) < originalY);
     assert.equal($('inline-editor').hidden, true);
     assert.notEqual(window.document.querySelector('[data-edge-id="e1"] .edge-line').getAttribute('d'), originalRoute);
-    assert.equal(window.document.querySelector('[data-node-id="n4"] .node-shape').getAttribute('x'), '278');
+    assert.equal(window.document.querySelector('[data-node-id="n4"] .node-shape').getAttribute('x'), '425');
     assert.equal(JSON.parse(localStorage.getItem('schematic-editor-v2')).positioned, true);
     window.document.querySelector('[data-node-id="n1"]').dispatchEvent(new window.MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 90, clientY: 230 }));
     window.dispatchEvent(new window.MouseEvent('pointermove', { bubbles: true, clientX: -170, clientY: -170 }));

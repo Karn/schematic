@@ -21,19 +21,19 @@ if (document.getElementById('layout-status').textContent !== 'Auto layout on') t
 if (process.argv.includes('--edited')) {
   document.querySelector('[data-node-id="n3"]').dispatchEvent(new dom.window.MouseEvent('dblclick', { bubbles: true }));
   const editor = document.getElementById('inline-editor');
-  editor.value = 'A VERY LONG UPDATED JAVASCRIPT LIBRARY';
+  editor.value = 'API SERVER WITH A LONGER LABEL';
   editor.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
-  for (let attempt = 0; attempt < 100 && !(JSON.parse(localStorage.getItem('schematic-editor-v2'))?.nodes.find(node => node.id === 'n3')?.width > 68); attempt++) {
+  for (let attempt = 0; attempt < 100 && !(JSON.parse(localStorage.getItem('schematic-editor-v2'))?.nodes.find(node => node.id === 'n3')?.width > 130); attempt++) {
     await new Promise(resolve => setTimeout(resolve, 20));
   }
   document.querySelector('[data-border="1"]').click();
   document.querySelector('[data-port-id="n3-south"]').dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 100, clientY: 100 }));
   dom.window.dispatchEvent(new dom.window.MouseEvent('pointermove', { bubbles: true, clientX: 200, clientY: 200 }));
-  document.querySelector('[data-port-id="n10-west"]').dispatchEvent(new dom.window.MouseEvent('pointerup', { bubbles: true, clientX: 200, clientY: 200 }));
-  for (let attempt = 0; attempt < 100 && document.querySelectorAll('#edges-layer .edge').length !== 17; attempt++) {
+  document.querySelector('[data-port-id="n7-west"]').dispatchEvent(new dom.window.MouseEvent('pointerup', { bubbles: true, clientX: 200, clientY: 200 }));
+  for (let attempt = 0; attempt < 100 && document.querySelectorAll('#edges-layer .edge').length !== 9; attempt++) {
     await new Promise(resolve => setTimeout(resolve, 20));
   }
-  if (document.querySelectorAll('#edges-layer .edge').length !== 17) throw Error('Edited route did not finish');
+  if (document.querySelectorAll('#edges-layer .edge').length !== 9) throw Error('Edited route did not finish');
 }
 document.getElementById('export-svg').click();
 if (!exported) throw Error('SVG export did not run');

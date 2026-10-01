@@ -27,7 +27,7 @@ function fitNode(node, others) {
   node.baseLabel ??= node.label;
   const padding = existing ? 12 : 16;
   const originalLabel = node.label === node.baseLabel;
-  const width = originalLabel ? node.baseWidth : Math.max(node.baseWidth, Math.ceil(Math.max(...lines.map(line => line.length)) * font * 0.61 + padding));
+  const width = originalLabel ? node.baseWidth : Math.max(node.baseWidth, Math.ceil(Math.max(...lines.map(line => line.length)) * (font * 0.61 + 0.7) + Math.max(padding, 16)));
   const height = originalLabel ? node.baseHeight : Math.max(node.baseHeight, Math.ceil(lines.length * font * 1.2 + padding));
   if (width === node.width && height === node.height) return;
   const x = node.x + ((node.width || width) - width) / 2;

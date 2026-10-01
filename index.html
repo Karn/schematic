@@ -16,7 +16,7 @@
         <h1 class="brand">SCHEMATIC</h1>
         <div class="top-actions">
           <button id="new-diagram" class="button text-button" type="button">New</button>
-          <button id="load-reference" class="button text-button" type="button">Sample</button>
+          <button id="load-sample" class="button text-button" type="button">Sample</button>
           <button id="export-svg" class="button primary-button" type="button">
             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5v9m0 0 3.5-3.5M10 11.5 6.5 8M3.5 13.5v3h13v-3"/></svg>
             Export SVG
@@ -38,6 +38,7 @@
                 <pattern id="halftone" patternUnits="userSpaceOnUse" width="6" height="6"><circle cx="1" cy="1" r="0.55" fill="#000"/><circle cx="4" cy="1" r="0.55" fill="#000"/><circle cx="2.5" cy="4" r="0.55" fill="#000"/><circle cx="5.5" cy="4" r="0.55" fill="#000"/></pattern>
                 <pattern id="canvas-tile" patternUnits="userSpaceOnUse" width="32" height="32"><path d="M32 0H0V32" fill="none" stroke="#e7e7e7" stroke-width="0.7"/></pattern>
               </defs>
+              <defs id="shape-masks"></defs>
               <rect id="canvas-tiles" fill="url(#canvas-tile)"></rect>
               <g id="shadows-layer"></g>
               <g id="backings-layer"></g>

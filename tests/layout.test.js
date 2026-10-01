@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { displayLines } from '../layout.js';
-import { referenceLayout, referenceTemplate } from '../reference-template.js';
+import { sampleLayout, sampleTemplate } from '../sample-template.js';
 import { layoutPositioned } from '../positioned-layout.js';
 
 function crossesInterior(a, b, node) {
@@ -61,11 +61,12 @@ test('long labels remain inside their node instead of being clipped', () => {
   assert.ok(size.height >= lines.length * 19 * 1.2 + 12);
 });
 
-test('reference composition routes avoid unrelated blocks', () => {
-  const document = referenceTemplate();
-  const result = referenceLayout(document);
+test('receipt splitter sample routes avoid unrelated blocks', () => {
+  const document = sampleTemplate();
+  const result = sampleLayout(document);
   assert.equal(result.width, 600);
   assert.equal(result.height, 600);
+  assert.deepEqual(document.nodes.filter(node => node.shape === 'database').map(node => node.label), ['RECEIPTS', 'SPLITS']);
   for (const edge of result.edges) {
     const original = document.edges.find(item => item.id === edge.id);
     for (const section of edge.sections) {
@@ -81,24 +82,24 @@ test('reference composition routes avoid unrelated blocks', () => {
   }
 });
 
-test('editing and linking the reference keeps placed blocks while fitting changed text', () => {
-  const document = referenceTemplate();
-  const original = referenceLayout(document);
+test('editing and linking the sample keeps placed blocks while fitting changed text', () => {
+  const document = sampleTemplate();
+  const original = sampleLayout(document);
   const edited = document.nodes.find(node => node.id === 'n3');
   edited.label = 'UPDATED LABEL WITH MORE TEXT';
-  document.edges.push({ id: 'new-edge', from: 'n3', fromSide: 'south', to: 'n8', toSide: 'north' });
+  document.edges.push({ id: 'new-edge', from: 'n3', fromSide: 'south', to: 'n7', toSide: 'north' });
   const result = layoutPositioned(document);
   const placed = new Map(result.children.map(node => [node.id, node]));
-  assert.ok(placed.get('n3').width > 68);
+  assert.ok(placed.get('n3').width > 130);
   for (const node of original.children.filter(node => node.id !== 'n3')) {
     assert.deepEqual([placed.get(node.id).x, placed.get(node.id).y, placed.get(node.id).width, placed.get(node.id).height],
       [node.x, node.y, node.width, node.height], `${node.id} stays in place`);
   }
-  assert.deepEqual(result.edges.find(edge => edge.id === 'e1').sections, original.edges.find(edge => edge.id === 'e1').sections);
-  edited.label = 'JS LIB';
+  assert.deepEqual(result.edges.find(edge => edge.id === 'e4').sections, original.edges.find(edge => edge.id === 'e4').sections);
+  edited.label = 'API SERVER';
   const shrunk = layoutPositioned(document);
-  assert.equal(shrunk.children.find(node => node.id === 'n3').width, 68);
-  assert.equal(shrunk.children.find(node => node.id === 'n3').height, 39);
+  assert.equal(shrunk.children.find(node => node.id === 'n3').width, 130);
+  assert.equal(shrunk.children.find(node => node.id === 'n3').height, 64);
   edited.label = 'UPDATED LABEL WITH MORE TEXT';
   layoutPositioned(document);
   for (const edge of result.edges) {
@@ -117,13 +118,13 @@ test('editing and linking the reference keeps placed blocks while fitting change
 });
 
 test('several adjacent label expansions keep boxes and routes separate', () => {
-  const document = referenceTemplate();
+  const document = sampleTemplate();
   for (const [id, label] of [
-    ['n3', 'A VERY LONG UPDATED JAVASCRIPT LIBRARY'],
-    ['n5', 'OBJECT ORIENTED PLATFORM FACTORY'],
-    ['n10', 'DATA COLLECTION AND SEWAGE PROCESSING'],
+    ['n3', 'API SERVER WITH A MUCH LONGER LABEL'],
+    ['n5', 'CALCULATE EACH PERSONS SHARE'],
+    ['n6', 'RECEIPT STORAGE WITH HISTORY'],
   ]) document.nodes.find(node => node.id === id).label = label;
-  document.edges.push({ id: 'extra', from: 'n3', fromSide: 'south', to: 'n10', toSide: 'west' });
+  document.edges.push({ id: 'extra', from: 'n3', fromSide: 'south', to: 'n6', toSide: 'west' });
   const result = layoutPositioned(document);
   for (let i = 0; i < result.children.length; i++) {
     for (let j = i + 1; j < result.children.length; j++) {

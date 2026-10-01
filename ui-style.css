@@ -111,5 +111,5 @@ button:focus-visible, textarea:focus-visible { outline-color: #000; }
   .shape-icon { width: 18px; height: 15px; }
   .canvas-topline, .canvas-bottomline { padding: 0 8px; }
   #diagram-name { max-width: 22ch; }
-  .top-actions #load-reference { display: inline-flex; }
+  .top-actions #load-sample { display: inline-flex; }
 }
