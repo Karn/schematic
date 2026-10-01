@@ -11,6 +11,10 @@ npm run dev
 
 Open the local URL printed by Vite. Use `npm run build` for a production build and `npm test` for the route geometry check.
 
+## GitHub Pages
+
+The production build uses `/schematic/` as its base path for `https://karn.github.io/schematic/`; local development stays at `/`. In the repository's **Settings → Pages**, set **Source** to **GitHub Actions**. The workflow in `.github/workflows/pages.yml` runs tests, builds the site, and deploys `dist` when `main` is pushed. The site is static; diagrams stay in each browser's local storage.
+
 The starter diagram recreates the supplied 600 × 600 print with editable labels and boxes. It uses a white background, uppercase monospaced text, square or double boxes, black right-angle arrows, and optional offset halftone shadows. Double click the canvas to add a text node; choose no border, a single border, or a double border in the inspector. Edits preserve the existing arrangement, fit changed text, and reroute affected arrows. **Reference sample** restores the traced composition.
 
 For the closest match, the app and exported SVG use the locally installed **Berkeley Mono** font. On another machine, the SVG falls back to Menlo or the system monospace font.
